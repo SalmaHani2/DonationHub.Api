@@ -1,4 +1,5 @@
-﻿using DonationHub.Domain.ValueObject;
+﻿using DonationHub.Domain.Common;
+using DonationHub.Domain.ValueObject;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class Campaign : IdentityUser<Guid>
+    public class Campaign : IdentityUser<Guid>, ISoftDeletable
     {
         //Id, TitleAr, TitleEn, DescriptionAr, DescriptionEn, GoalAmount, RaisedAmount,EndDate,
         //CategoryId, BannerFileName?, Status, CreatedByUserId, CreatedAt, UpdatedAt
@@ -23,27 +24,7 @@ namespace DonationHub.Domain.Entities
         public Guid CreatedByUserId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAtUtc { get; set; }
     }
 }

@@ -1,4 +1,7 @@
+using DonationHub.Application.Interfaces;
 using DonationHub.Infrastructure.Persistence;
+using DonationHub.Infrastructure.Persistence.Interceptors;
+using DonationHub.Infrastructure.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,9 +13,19 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 
-builder.Services.AddDbContext<AppDbContext>(options =>
+////////////////////////////////////////////////////////////////////////////////////
+builder.Services.AddSingleton<SoftDeleteInterceptor>();
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+{
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    options.AddInterceptors(
+        serviceProvider.GetRequiredService<SoftDeleteInterceptor>());
+});
+//////////////////////////////////////////////////
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+//////////////////////////////////////////////////
 
 var app = builder.Build();
 

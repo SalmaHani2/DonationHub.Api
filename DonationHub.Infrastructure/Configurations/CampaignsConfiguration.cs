@@ -17,7 +17,7 @@ public class CampaignConfiguration
 
         builder.HasIndex(c => c.CategoryId);
 
-
+        builder.HasQueryFilter(c => !c.IsDeleted);
 
         builder.HasOne<ApplicationUser>()
     .WithMany()

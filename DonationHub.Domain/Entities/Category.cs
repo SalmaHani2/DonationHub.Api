@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DonationHub.Domain.Common;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class Category : IdentityUser<Guid>
+    public class Category : IdentityUser<Guid>, ISoftDeletable
     {
         //Id, NameAr, NameEn, DescriptionAr, DescriptionEn, CreatedAt, UpdatedAt.
         public string NameAr { get; set; }
@@ -14,6 +15,7 @@ namespace DonationHub.Domain.Entities
         public string DescriptionEn { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAtUtc { get; set; }
     }
 }
