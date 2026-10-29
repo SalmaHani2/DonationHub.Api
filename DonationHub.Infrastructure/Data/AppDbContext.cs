@@ -12,7 +12,7 @@ public class AppDbContext : DbContext
     {
 
     }
-
+    //fluent API 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
