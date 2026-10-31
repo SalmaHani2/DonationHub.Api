@@ -1,11 +1,14 @@
 ﻿using DonationHub.Domain.Entities;
+using DonationHub.Domain.ValueObject;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 
 namespace DonationHub.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext
+public class AppDbContext :IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
+    //DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
