@@ -5,9 +5,10 @@ using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class RefreshToken : IdentityUser<Guid>
+    public class RefreshToken 
     {
         //Id, UserId, TokenHash, CreatedAt, ExpiresAt, RevokedAt?, ReplacedByTokenId?
+        public Guid Id { get; set; }
         public Guid UserId { get; set; }
         public string TokenHash { get; set; }
         public DateTime CreatedAt { get; set; }

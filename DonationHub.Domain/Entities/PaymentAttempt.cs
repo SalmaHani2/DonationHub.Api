@@ -5,10 +5,11 @@ using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class PaymentAttempt : IdentityUser<Guid>
+    public class PaymentAttempt 
     {
         //Id, DonationId, StripeCheckoutSessionId, StripePaymentIntentId?,
         //Amount, Status, CreatedAt, UpdatedAt, FailureCode?
+        public Guid Id { get; set; }
         public Guid DonationId { get; set; }
         public string StripeCheckoutSessionId { get; set; }
         public string? StripePaymentIntentId { get; set; }
