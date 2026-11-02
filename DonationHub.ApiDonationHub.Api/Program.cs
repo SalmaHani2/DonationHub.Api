@@ -1,9 +1,14 @@
 using DonationHub.Application.Interfaces;
 using DonationHub.Application.Options;
+using DonationHub.Domain.ValueObject;
+using DonationHub.Domain.ValueObject;
 using DonationHub.Infrastructure.Options;
 using DonationHub.Infrastructure.Persistence;
 using DonationHub.Infrastructure.Persistence.Interceptors;
+using DonationHub.Infrastructure.Services;
 using DonationHub.Infrastructure.UnitOfWork;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +19,22 @@ builder.Services
     .Bind(builder.Configuration.GetSection("Jwt"))
     .ValidateDataAnnotations()
     .ValidateOnStart();
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
+    {
+        // Password Policy
+        options.Password.RequiredLength = 8;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireDigit = true;
+        options.Password.RequireNonAlphanumeric = false;
 
+        // Unique Email
+        options.User.RequireUniqueEmail = true;
+    })
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+builder.Services.AddScoped<JwtTokenService>();
 builder.Services
     .AddOptions<SeedAdminOptions>()
     .Bind(builder.Configuration.GetSection(SeedAdminOptions.SectionName))
@@ -44,8 +64,13 @@ builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) =>
 //////////////////////////////////////////////////
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 //////////////////////////////////////////////////
-
+builder.Services.AddScoped<AdminSeeder>();
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
+    await seeder.SeedAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -54,7 +79,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

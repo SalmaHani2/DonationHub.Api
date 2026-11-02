@@ -12,4 +12,16 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool IsActive { get; private set; } = true;
 
     public DateTime CreatedAt { get; private set; }
+    public ApplicationUser(
+      string email,
+      string fullName,
+      string preferredLanguage,
+      DateTime createdAt)
+    {
+        Email = email;
+        UserName = email;
+        FullName = fullName;
+        PreferredLanguage = preferredLanguage;
+        CreatedAt = createdAt;
+    }
 }
