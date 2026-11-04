@@ -55,13 +55,21 @@ namespace DonationHub.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("GoalAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<decimal>("RaisedAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -99,22 +107,18 @@ namespace DonationHub.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DescriptionAr")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DescriptionEn")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<string>("NameAr")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NameEn")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -132,6 +136,7 @@ namespace DonationHub.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("CampaignId")
@@ -514,32 +519,30 @@ namespace DonationHub.Infrastructure.Migrations
 
             modelBuilder.Entity("DonationHub.Domain.Entities.Campaign", b =>
                 {
-                    b.HasOne("DonationHub.Domain.Entities.Category", null)
-                        .WithMany()
+                    b.HasOne("DonationHub.Domain.Entities.Category", "Category")
+                        .WithMany("Campaigns")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("DonationHub.Domain.Entities.Donation", b =>
                 {
-                    b.HasOne("DonationHub.Domain.Entities.Campaign", null)
-                        .WithMany()
+                    b.HasOne("DonationHub.Domain.Entities.Campaign", "Campaign")
+                        .WithMany("Donations")
                         .HasForeignKey("CampaignId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
-                        .WithMany()
+                        .WithMany("Donations")
                         .HasForeignKey("DonorUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Campaign");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -591,6 +594,21 @@ namespace DonationHub.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("DonationHub.Domain.Entities.Campaign", b =>
+                {
+                    b.Navigation("Donations");
+                });
+
+            modelBuilder.Entity("DonationHub.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("Campaigns");
+                });
+
+            modelBuilder.Entity("DonationHub.Domain.ValueObject.ApplicationUser", b =>
+                {
+                    b.Navigation("Donations");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,15 +1,15 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DonationHub.Domain.Common;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class PaymentAttempt 
+    public class PaymentAttempt : Entity
     {
         //Id, DonationId, StripeCheckoutSessionId, StripePaymentIntentId?,
         //Amount, Status, CreatedAt, UpdatedAt, FailureCode?
-        public Guid Id { get; set; }
         public Guid DonationId { get; set; }
         public string StripeCheckoutSessionId { get; set; }
         public string? StripePaymentIntentId { get; set; }

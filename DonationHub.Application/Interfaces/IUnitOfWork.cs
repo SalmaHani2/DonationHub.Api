@@ -6,10 +6,8 @@ namespace DonationHub.Application.Interfaces
 {
     public interface IUnitOfWork
     {
-        IGenericRepository<T> Repository<T>()
-        where T : class;
+        IGenericRepository<T> Repository<T>() where T : class;
 
-        Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default);
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

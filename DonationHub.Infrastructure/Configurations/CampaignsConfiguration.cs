@@ -3,14 +3,12 @@ using DonationHub.Domain.ValueObject;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DonationHub.Infrastructure.Persistence.Configurations;
-
 public class CampaignConfiguration
     : IEntityTypeConfiguration<Campaign>
 {
     public void Configure(EntityTypeBuilder<Campaign> builder)
     {
-        builder.HasOne<Category>()
+        builder.HasOne(c => c.Category)
             .WithMany()
             .HasForeignKey(c => c.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -19,11 +17,20 @@ public class CampaignConfiguration
 
         builder.HasQueryFilter(c => !c.IsDeleted);
 
-        builder.HasOne<ApplicationUser>()
-    .WithMany()
-    .HasForeignKey(c => c.CreatedByUserId)
-    .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(c => c.Category)
+       .WithMany(c => c.Campaigns)
+       .HasForeignKey(c => c.CategoryId)
+       .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(c => c.CreatedByUserId);
+
+        builder.Property(c => c.RowVersion)
+            .IsRowVersion();
+
+        builder.Property(c => c.GoalAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(c => c.RaisedAmount)
+            .HasPrecision(18, 2);
     }
 }

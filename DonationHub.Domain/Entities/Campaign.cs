@@ -4,9 +4,11 @@ using DonationHub.Domain.Enums;
 
 namespace DonationHub.Domain.Entities
 {
-    public class Campaign : ISoftDeletable
+    public class Campaign :Entity,ISoftDeletable
     {
-        public Guid Id { get; private set; }
+        //Id, TitleAr, TitleEn, DescriptionAr, DescriptionEn, GoalAmount,
+        //RaisedAmount, EndDate, CategoryId,
+        //BannerFileName?, Status, CreatedByUserId, CreatedAt, UpdatedAt, IsDeleted, RowVersion.
         public string TitleAr { get; set; } = string.Empty;
         public string TitleEn { get; set; } = string.Empty;
         public string DescriptionAr { get; set; } = string.Empty;
@@ -27,14 +29,16 @@ namespace DonationHub.Domain.Entities
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAtUtc { get; set; }
 
+        public Category Category { get; set; } = null!;
+        public ICollection<Donation> Donations { get; set; }= new List<Donation>();
+
+        public byte[] RowVersion { get; private set; } = null!;
+
         private Campaign()
         {
         }
 
-        public static Campaign Create(
-            decimal goalAmount,
-            DateTime endDate,
-            DateTime currentTime)
+        public static Campaign Create(decimal goalAmount,DateTime endDate,DateTime currentTime)
         {
             if (goalAmount <= 0)
             {
@@ -50,7 +54,6 @@ namespace DonationHub.Domain.Entities
 
             return new Campaign
             {
-                Id = Guid.NewGuid(),
                 GoalAmount = goalAmount,
                 RaisedAmount = 0,
                 EndDate = endDate,
@@ -82,9 +85,7 @@ namespace DonationHub.Domain.Entities
             GoalAmount = goalAmount;
         }
 
-        public void ChangeEndDate(
-            DateTime endDate,
-            DateTime currentTime)
+        public void ChangeEndDate(DateTime endDate,DateTime currentTime)
         {
             if (endDate <= currentTime)
             {

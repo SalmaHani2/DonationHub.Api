@@ -13,10 +13,7 @@ public class AdminSeeder
     private readonly SeedAdminOptions _options;
 
 
-    public AdminSeeder(
-        UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole<Guid>> roleManager,
-        IOptions<SeedAdminOptions> options)
+    public AdminSeeder(UserManager<ApplicationUser> userManager,RoleManager<IdentityRole<Guid>> roleManager,IOptions<SeedAdminOptions> options)
     {
         _userManager = userManager;
         _roleManager = roleManager;

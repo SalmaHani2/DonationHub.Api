@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DonationHub.Domain.Common;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class RefreshToken 
+    public class RefreshToken  : Entity
     {
         //Id, UserId, TokenHash, CreatedAt, ExpiresAt, RevokedAt?, ReplacedByTokenId?
-        public Guid Id { get; set; }
         public Guid UserId { get; set; }
         public string TokenHash { get; set; }
         public DateTime CreatedAt { get; set; }

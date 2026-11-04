@@ -19,11 +19,7 @@ public class AuthService : IAuthService
     private readonly AppDbContext _dbContext;
     private readonly JwtOptions _jwtOptions;
 
-    public AuthService(
-        UserManager<ApplicationUser> userManager,
-        JwtTokenService jwtTokenService,
-        AppDbContext dbContext,
-        IOptions<JwtOptions> jwtOptions)
+    public AuthService(UserManager<ApplicationUser> userManager,JwtTokenService jwtTokenService,AppDbContext dbContext,IOptions<JwtOptions> jwtOptions)
     {
         _userManager = userManager;
         _jwtTokenService = jwtTokenService;
@@ -31,9 +27,7 @@ public class AuthService : IAuthService
         _jwtOptions = jwtOptions.Value;
     }
 
-    public async Task RegisterAsync(
-        RegisterRequest request,
-        CancellationToken cancellationToken)
+    public async Task RegisterAsync(RegisterRequest request,CancellationToken cancellationToken)
     {
         var user = new ApplicationUser(
             request.Email,
@@ -51,7 +45,7 @@ public class AuthService : IAuthService
         var user = await _userManager.FindByEmailAsync(request.Email);
 
         if (user == null ||
-     !await _userManager.CheckPasswordAsync(user, request.Password))
+         !await _userManager.CheckPasswordAsync(user, request.Password))
         {
             throw new UnauthorizedAccessException("Auth.InvalidCredentials");
         }
@@ -73,7 +67,7 @@ public class AuthService : IAuthService
 
         var refreshTokenEntity = new RefreshToken
         {
-            Id = Guid.NewGuid(),
+            
             UserId = user.Id,
             TokenHash = tokenHash,
             CreatedAt = DateTime.UtcNow,
@@ -92,9 +86,7 @@ public class AuthService : IAuthService
     }
 
 
-    public async Task<LoginResponse> RefreshAsync(
-    RefreshRequest request,
-    CancellationToken cancellationToken)
+    public async Task<LoginResponse> RefreshAsync(RefreshRequest request,CancellationToken cancellationToken)
     {
         var hash = Convert.ToBase64String(
             SHA256.HashData(Encoding.UTF8.GetBytes(request.RefreshToken)));
@@ -131,7 +123,6 @@ public class AuthService : IAuthService
 
         var newTokenEntity = new RefreshToken
         {
-            Id = Guid.NewGuid(),
             UserId = user.Id,
             TokenHash = Convert.ToBase64String(
                 SHA256.HashData(Encoding.UTF8.GetBytes(newRefreshToken))),
@@ -155,9 +146,7 @@ public class AuthService : IAuthService
     }
 
 
-        public async Task LogoutAsync(
-    RefreshRequest request,
-    CancellationToken cancellationToken)
+    public async Task LogoutAsync(RefreshRequest request,CancellationToken cancellationToken)
     {
         var hash = Convert.ToBase64String(
             SHA256.HashData(

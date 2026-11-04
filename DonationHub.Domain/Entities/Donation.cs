@@ -1,10 +1,10 @@
-﻿using DonationHub.Domain.Enums;
+﻿using DonationHub.Domain.Common;
+using DonationHub.Domain.Enums;
 
 namespace DonationHub.Domain.Entities
 {
-    public class Donation
+    public class Donation: Entity
     {
-        public Guid Id { get; private set; }
 
         public Guid CampaignId { get; set; }
         public Guid DonorUserId { get; set; }
@@ -20,15 +20,15 @@ namespace DonationHub.Domain.Entities
         public string? ReceiptNumber { get; private set; }
         public string? ReceiptFileName { get; private set; }
 
+        
+
+        public Campaign Campaign { get; set; } = null!;
+
         private Donation()
         {
         }
 
-        public static Donation Create(
-            decimal amount,
-            decimal minAmount,
-            decimal maxAmount,
-            DateTime currentTime)
+        public static Donation Create(decimal amount,decimal minAmount,decimal maxAmount,DateTime currentTime)
         {
             if (amount < minAmount || amount > maxAmount)
             {
@@ -39,7 +39,6 @@ namespace DonationHub.Domain.Entities
 
             return new Donation
             {
-                Id = Guid.NewGuid(),
                 Amount = amount,
                 Status = DonationStatus.Pending,
                 CreatedAt = currentTime

@@ -6,10 +6,9 @@ using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class Category :  ISoftDeletable
+    public class Category : Entity, ISoftDeletable
     {
         //Id, NameAr, NameEn, DescriptionAr, DescriptionEn, CreatedAt, UpdatedAt.
-        public Guid Id { get; set; }
         public string? NameAr { get; set; }
         public string? NameEn { get; set; }
         public string? DescriptionAr { get; set; }
@@ -18,6 +17,8 @@ namespace DonationHub.Domain.Entities
         public DateTime UpdatedAt { get; set; }
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAtUtc { get; set; }
+
+        public ICollection<Campaign> Campaigns { get; set; }= new List<Campaign>();
 
     }
 }

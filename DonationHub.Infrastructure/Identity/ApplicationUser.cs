@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DonationHub.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 namespace DonationHub.Domain.ValueObject;
 public class ApplicationUser : IdentityUser<Guid>
 {
@@ -12,6 +13,12 @@ public class ApplicationUser : IdentityUser<Guid>
     public bool IsActive { get; private set; } = true;
 
     public DateTime CreatedAt { get; private set; }
+
+
+
+    public ICollection<Donation> Donations { get; set; } = new List<Donation>();
+
+
     public ApplicationUser(
       string email,
       string fullName,

@@ -2,32 +2,27 @@
 using DonationHub.Domain.ValueObject;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace DonationHub.Infrastructure.Configurations
-{
-    public class DonationConfiguration
+public class DonationConfiguration
     : IEntityTypeConfiguration<Donation>
+{
+    public void Configure(EntityTypeBuilder<Donation> builder)
     {
-        public void Configure(EntityTypeBuilder<Donation> builder)
-        {
-            builder.HasOne<Campaign>()
-                .WithMany()
-                .HasForeignKey(d => d.CampaignId);
+        builder.HasOne(d => d.Campaign)
+            .WithMany(c => c.Donations)
+            .HasForeignKey(d => d.CampaignId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasIndex(d => d.CampaignId);
+        builder.HasIndex(d => d.CampaignId);
 
+        builder.HasOne<ApplicationUser>()
+            .WithMany(u => u.Donations)
+            .HasForeignKey(d => d.DonorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(d => d.DonorUserId);
 
-            builder.HasOne<ApplicationUser>()
-              .WithMany()
-               .HasForeignKey(d => d.DonorUserId)
-               .OnDelete(DeleteBehavior.Restrict);
- 
-            builder.HasIndex(d => d.DonorUserId);
-        }
-
+        builder.Property(d => d.Amount)
+            .HasPrecision(18, 2);
     }
 }

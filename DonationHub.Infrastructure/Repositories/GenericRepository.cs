@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DonationHub.Infrastructure.Repositories;
 
 public class GenericRepository<T> : IGenericRepository<T>
-    where T : class
+    where T : class //BaseEntity   //class
 {
     private readonly AppDbContext _context;
 

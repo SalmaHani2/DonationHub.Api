@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using DonationHub.Domain.Common;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace DonationHub.Domain.Entities
 {
-    public class IdempotencyRecord
+    public class IdempotencyRecord 
     {
         //Key, UserId, RequestHash, ResponseStatusCode, ResponseBody, CreatedAt, ExpiresAt.
         public Guid Id { get; set; }

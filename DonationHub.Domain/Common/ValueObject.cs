@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DonationHub.Domain.ValueObject
+namespace DonationHub.Domain.Common
 {
     public abstract class ValueObject
     {
