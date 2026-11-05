@@ -1,83 +1,95 @@
 ﻿using DonationHub.Application.DTOs.Auth;
 using DonationHub.Application.Interfaces;
 using DonationHub.Domain.Entities;
-using DonationHub.Domain.ValueObject;
+using DonationHub.Infrastructure.Identity;
 using DonationHub.Infrastructure.Options;
 using DonationHub.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace DonationHub.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly JwtTokenService _jwtTokenService;
-    private readonly AppDbContext _dbContext;
+    private readonly AppDbContext _context;
+    private readonly ITokenService _tokenService;
     private readonly JwtOptions _jwtOptions;
 
-    public AuthService(UserManager<ApplicationUser> userManager,JwtTokenService jwtTokenService,AppDbContext dbContext,IOptions<JwtOptions> jwtOptions)
+    public AuthService(UserManager<ApplicationUser> userManager,AppDbContext context,ITokenService tokenService,IOptions<JwtOptions> jwtOptions)
     {
         _userManager = userManager;
-        _jwtTokenService = jwtTokenService;
-        _dbContext = dbContext;
+        _context = context;
+        _tokenService = tokenService;
         _jwtOptions = jwtOptions.Value;
     }
 
-    public async Task RegisterAsync(RegisterRequest request,CancellationToken cancellationToken)
+    // IDN-01: Register
+    public async Task<RegisterResponse> RegisterAsync(RegisterRequest request,CancellationToken cancellationToken)
     {
-        var user = new ApplicationUser(
-            request.Email,
-            request.FullName,
-            request.PreferredLanguage,
-            DateTime.UtcNow);
+        var email = request.Email.Trim();
 
-        await _userManager.CreateAsync(user, request.Password);
-        await _userManager.AddToRoleAsync(user, "Donor");
+        var preferredLanguage =
+            request.PreferredLanguage.Trim().ToLowerInvariant();
+
+        var user = new ApplicationUser(email,request.FullName.Trim(),preferredLanguage,DateTime.UtcNow);
+
+        if (user != null)
+        {
+            throw new InvalidOperationException("Auth.EmailAlreadyExists");
+        }
+        return new RegisterResponse
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            FullName = user.FullName,
+            PreferredLanguage = user.PreferredLanguage
+        };
     }
 
-
-    public async Task<LoginResponse> LoginAsync( LoginRequest request, CancellationToken cancellationToken)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request,CancellationToken cancellationToken)
     {
-        var user = await _userManager.FindByEmailAsync(request.Email);
+        var email = request.Email.Trim();
 
-        if (user == null ||
-         !await _userManager.CheckPasswordAsync(user, request.Password))
+        var user = await _userManager.FindByEmailAsync(email);
+
+        if (user == null ||!await _userManager.CheckPasswordAsync(user, request.Password))
         {
-            throw new UnauthorizedAccessException("Auth.InvalidCredentials");
+            throw new UnauthorizedAccessException(
+                "Auth.InvalidCredentials");
         }
-
         if (!user.IsActive)
         {
-            throw new UnauthorizedAccessException("Auth.AccountDeactivated");
+            throw new InvalidOperationException(
+                "Auth.AccountDeactivated");
         }
 
+        //  Get user roles
         var roles = await _userManager.GetRolesAsync(user);
 
-        var accessToken = _jwtTokenService.GenerateToken(user, roles);
+        //  Generate tokens
+        var accessToken = _tokenService.GenerateAccessToken(
+            user.Id,
+            user.Email!,
+            roles);
 
-        var refreshToken = Convert.ToBase64String(
-            RandomNumberGenerator.GetBytes(64));
+        var refreshToken = _tokenService.GenerateRefreshToken();
 
-        var tokenHash = Convert.ToBase64String(
-            SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
+        // Hash refresh token
+        var refreshTokenHash = _tokenService.HashRefreshToken(refreshToken);
+        //  Create refresh token entity
+        var token = new RefreshToken(
+            user.Id,
+            refreshTokenHash,
+            DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays));
 
-        var refreshTokenEntity = new RefreshToken
-        {
-            
-            UserId = user.Id,
-            TokenHash = tokenHash,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(
-                _jwtOptions.RefreshTokenExpiryDays)
-        };
+        //  Save refresh token
+        _context.RefreshTokens.Add(token);
 
-        _dbContext.RefreshTokens.Add(refreshTokenEntity);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
+        // Return response
         return new LoginResponse
         {
             AccessToken = accessToken,
@@ -85,14 +97,12 @@ public class AuthService : IAuthService
         };
     }
 
-
-    public async Task<LoginResponse> RefreshAsync(RefreshRequest request,CancellationToken cancellationToken)
+    public async Task<LoginResponse> RefreshAsync(RefreshRequest request, CancellationToken cancellationToken)
     {
-        var hash = Convert.ToBase64String(
-            SHA256.HashData(Encoding.UTF8.GetBytes(request.RefreshToken)));
+        var tokenHash = _tokenService.HashRefreshToken(request.RefreshToken);
 
-        var oldToken = await _dbContext.RefreshTokens
-            .FirstOrDefaultAsync(x => x.TokenHash == hash, cancellationToken);
+        var oldToken = await _context.RefreshTokens
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
 
         if (oldToken == null ||
             oldToken.RevokedAt != null ||
@@ -102,41 +112,30 @@ public class AuthService : IAuthService
         }
 
         var user = await _userManager.FindByIdAsync(oldToken.UserId.ToString());
-        if (user == null ||
-           !await _userManager.CheckPasswordAsync(user, request.Password))
-        {
-            throw new UnauthorizedAccessException("Auth.InvalidCredentials");
-        }
-        if (user == null)
-            throw new UnauthorizedAccessException("Auth.RefreshTokenInvalid");
+
         if (!user.IsActive)
         {
-            throw new UnauthorizedAccessException("Auth.AccountDeactivated");
+            throw new InvalidOperationException("Auth.AccountDeactivated");
         }
 
         var roles = await _userManager.GetRolesAsync(user);
 
-        var accessToken = _jwtTokenService.GenerateToken(user, roles);
+        var accessToken = _tokenService.GenerateAccessToken(
+            user.Id, user.Email!, roles);
 
-        var newRefreshToken = Convert.ToBase64String(
-            RandomNumberGenerator.GetBytes(64));
+        var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-        var newTokenEntity = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = Convert.ToBase64String(
-                SHA256.HashData(Encoding.UTF8.GetBytes(newRefreshToken))),
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(
-                _jwtOptions.RefreshTokenExpiryDays)
-        };
+        var newTokenEntity = new RefreshToken(
+            user.Id,
+            _tokenService.HashRefreshToken(newRefreshToken),
+            DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenExpirationDays));
 
-        oldToken.RevokedAt = DateTime.UtcNow;
-        oldToken.ReplacedByTokenId = newTokenEntity.Id;
+        // Revoke the old token and link it to the new token.
+        oldToken.Revoke(newTokenEntity.Id);
 
-        _dbContext.RefreshTokens.Add(newTokenEntity);
+        _context.RefreshTokens.Add(newTokenEntity);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponse
         {
@@ -145,23 +144,28 @@ public class AuthService : IAuthService
         };
     }
 
-
-    public async Task LogoutAsync(RefreshRequest request,CancellationToken cancellationToken)
+    public async Task LogoutAsync(Guid userId,RefreshRequest request,CancellationToken cancellationToken)
     {
-        var hash = Convert.ToBase64String(
-            SHA256.HashData(
-                Encoding.UTF8.GetBytes(request.RefreshToken)));
+        var tokenHash = _tokenService.HashRefreshToken(request.RefreshToken);
 
-        var token = await _dbContext.RefreshTokens
-            .FirstOrDefaultAsync(
-                x => x.TokenHash == hash,
-                cancellationToken);
-
-        if (token != null)
-        {
-            token.RevokedAt = DateTime.UtcNow;
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-        }
+        var refreshToken = await _context.RefreshTokens
+            .SingleOrDefaultAsync(token =>token.UserId == userId && token.TokenHash == tokenHash, cancellationToken);
     }
+
+    public async Task<UserProfileResponse?> GetCurrentUserAsync(Guid userId,CancellationToken cancellationToken)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var roles = await _userManager.GetRolesAsync(user);
+
+        return new UserProfileResponse
+        {  
+            Email = user.Email!,
+            FullName = user.FullName,
+            PreferredLanguage = user.PreferredLanguage,
+            Roles = roles
+        };
+    }
+
+
+    
 }

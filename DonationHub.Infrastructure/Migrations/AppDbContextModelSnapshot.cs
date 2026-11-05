@@ -263,7 +263,7 @@ namespace DonationHub.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("processedStripeEvents");
+                    b.ToTable("ProcessedStripeEvents");
                 });
 
             modelBuilder.Entity("DonationHub.Domain.Entities.RefreshToken", b =>
@@ -286,17 +286,23 @@ namespace DonationHub.Infrastructure.Migrations
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("DonationHub.Domain.ValueObject.ApplicationUser", b =>
+            modelBuilder.Entity("DonationHub.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -374,7 +380,9 @@ namespace DonationHub.Infrastructure.Migrations
                     b.HasIndex("Email");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .IsUnique()
+                        .HasDatabaseName("EmailIndex")
+                        .HasFilter("[NormalizedEmail] IS NOT NULL");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
@@ -536,13 +544,22 @@ namespace DonationHub.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
+                    b.HasOne("DonationHub.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany("Donations")
                         .HasForeignKey("DonorUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Campaign");
+                });
+
+            modelBuilder.Entity("DonationHub.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("DonationHub.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -556,7 +573,7 @@ namespace DonationHub.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
+                    b.HasOne("DonationHub.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -565,7 +582,7 @@ namespace DonationHub.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
+                    b.HasOne("DonationHub.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -580,7 +597,7 @@ namespace DonationHub.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
+                    b.HasOne("DonationHub.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -589,7 +606,7 @@ namespace DonationHub.Infrastructure.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("DonationHub.Domain.ValueObject.ApplicationUser", null)
+                    b.HasOne("DonationHub.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -606,7 +623,7 @@ namespace DonationHub.Infrastructure.Migrations
                     b.Navigation("Campaigns");
                 });
 
-            modelBuilder.Entity("DonationHub.Domain.ValueObject.ApplicationUser", b =>
+            modelBuilder.Entity("DonationHub.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Navigation("Donations");
                 });

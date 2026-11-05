@@ -1,8 +1,6 @@
-﻿using DonationHub.Application.DTOs.Auth;
+﻿using System.Security.Claims;
+using DonationHub.Application.DTOs.Auth;
 using DonationHub.Application.Interfaces;
-using DonationHub.Domain.ValueObject;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DonationHub.Api.Controllers;
@@ -11,122 +9,65 @@ namespace DonationHub.Api.Controllers;
 [Route("api/v1/auth")]
 public class AuthController : ControllerBase
 {
-   private readonly IAuthService _authService;
+    private readonly IAuthService _authService;
 
-    //public AuthController(IAuthService authService)
-    //{
-      //  _authService = authService;
-    //}
-    private readonly UserManager<ApplicationUser> _userManager;
-
-    public AuthController(IAuthService authService,UserManager<ApplicationUser> userManager)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
-        _userManager = userManager;
     }
 
+    // POST auth/register
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Register(RegisterRequest request,CancellationToken cancellationToken)
     {
-        try
-        {
-            await _authService.RegisterAsync(request, cancellationToken);
+        
+            var result = await _authService.RegisterAsync(request,cancellationToken);
 
-            return StatusCode(201, new
-            {
-                message = "User registered successfully."
-            });
-        }
-        catch (InvalidOperationException ex)
-            when (ex.Message == "Auth.EmailAlreadyExists")
-        {
-            return Conflict(new { code = "Auth.EmailAlreadyExists" });
-        }
+            return StatusCode(201, result);
     }
 
+    // POST auth/login
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login(LoginRequest request,CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await _authService.LoginAsync(
-                request, cancellationToken);
-
+       
+            var result = await _authService.LoginAsync(request,cancellationToken);
             return Ok(result);
-        }
-        catch (UnauthorizedAccessException ex)
-            when (ex.Message == "Auth.AccountDeactivated")
-        {
-            return StatusCode(403, new
-            {
-                code = "Auth.AccountDeactivated"
-            });
-        }
-        catch (UnauthorizedAccessException ex)
-         when (ex.Message == "Auth.InvalidCredentials")
-        {
-            return Unauthorized(new
-            {
-                code = "Auth.InvalidCredentials"
-            });
-        }
+       
     }
 
+    // POST auth/refresh
     [HttpPost("refresh")]
+   
     public async Task<IActionResult> Refresh(RefreshRequest request,CancellationToken cancellationToken)
     {
-        try
-        {
             var result = await _authService.RefreshAsync(
-                request, cancellationToken);
+                request,
+                cancellationToken);
 
             return Ok(result);
-        }
-        catch (UnauthorizedAccessException ex)
-            when (ex.Message == "Auth.AccountDeactivated")
-        {
-            return StatusCode(403, new
-            {
-                code = "Auth.AccountDeactivated"
-            });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new
-            {
-                code = "Auth.RefreshTokenInvalid"
-            });
-        }
+      
     }
 
+    // POST auth/logout
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(RefreshRequest request,CancellationToken cancellationToken)
     {
-        await _authService.LogoutAsync(request, cancellationToken);
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        return Ok();
+        await _authService.LogoutAsync(userId,request,cancellationToken);
+
+        return NoContent();
     }
 
-    [Authorize]
+    // GET auth/me
     [HttpGet("me")]
-    public async Task<IActionResult> Me()
+    public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
-        var userId = User.FindFirst("UserId")?.Value;
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        if (userId == null)
-            return Unauthorized();
+        var user = await _authService.GetCurrentUserAsync(userId,cancellationToken);
 
-        var user = await _userManager.FindByIdAsync(userId);
-
-        if (user == null)
-            return Unauthorized();
-
-        return Ok(new
-        {
-            user.Id,
-            user.Email,
-            user.FullName,
-            user.PreferredLanguage
-        });
+        return Ok(user);
     }
 }

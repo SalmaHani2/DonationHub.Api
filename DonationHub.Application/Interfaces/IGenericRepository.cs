@@ -1,10 +1,11 @@
-﻿using System;
+﻿using DonationHub.Domain.Common;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace DonationHub.Application.Interfaces
 {
-    public interface IGenericRepository<T> where T : class
+    public interface IGenericRepository<T> where T : Entity
     {
         Task AddAsync(T entity, CancellationToken cancellationToken);
 

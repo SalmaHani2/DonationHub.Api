@@ -1,23 +1,16 @@
-﻿
-using System.ComponentModel.DataAnnotations;
-
-namespace DonationHub.Infrastructure.Options;
+﻿namespace DonationHub.Infrastructure.Options;
 
 public class JwtOptions
 {
-    [Required]
-    [MinLength(32)]
+    public const string SectionName = "Jwt";
+
     public string SecretKey { get; set; } = string.Empty;
 
-    [Required]
     public string Issuer { get; set; } = string.Empty;
 
-    [Required]
     public string Audience { get; set; } = string.Empty;
 
-    [Range(1, 1440)]
-    public int ExpiryMinutes { get; set; }
+    public int AccessTokenExpirationMinutes { get; set; } = 15;
 
-    [Range(1, 365)]
-    public int RefreshTokenExpiryDays { get; set; }
+    public int RefreshTokenExpirationDays { get; set; } = 7;
 }

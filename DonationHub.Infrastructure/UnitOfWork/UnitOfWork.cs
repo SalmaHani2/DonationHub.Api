@@ -1,4 +1,5 @@
 ﻿using DonationHub.Application.Interfaces;
+using DonationHub.Domain.Common;
 using DonationHub.Infrastructure.Persistence;
 using DonationHub.Infrastructure.Repositories;
 using System;
@@ -17,7 +18,7 @@ namespace DonationHub.Infrastructure.UnitOfWork
             _context = context;
         }
 
-        public IGenericRepository<T> Repository<T>() where T : class
+        public IGenericRepository<T> Repository<T>() where T : Entity
         {
             var type = typeof(T);
 
@@ -30,8 +31,7 @@ namespace DonationHub.Infrastructure.UnitOfWork
             return (IGenericRepository<T>)repository;
         }
 
-        public Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = default)
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             return _context.SaveChangesAsync(cancellationToken);
         }

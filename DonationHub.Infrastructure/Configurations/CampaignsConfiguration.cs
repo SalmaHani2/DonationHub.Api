@@ -1,10 +1,8 @@
 ﻿using DonationHub.Domain.Entities;
-using DonationHub.Domain.ValueObject;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-public class CampaignConfiguration
-    : IEntityTypeConfiguration<Campaign>
+public class CampaignConfiguration: IEntityTypeConfiguration<Campaign>
 {
     public void Configure(EntityTypeBuilder<Campaign> builder)
     {

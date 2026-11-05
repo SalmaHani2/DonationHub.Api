@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace DonationHub.Application.DTOs.Auth
+namespace DonationHub.Application.DTOs.Auth;
+
+public class RefreshRequest
 {
-    public class RefreshRequest
-    {
-        public string RefreshToken { get; set; } = string.Empty;
-        public string Password { get; set; }
-    }
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
 }

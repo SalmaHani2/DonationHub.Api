@@ -1,37 +1,38 @@
-
 using DonationHub.Infrastructure;
-using DonationHub.Infrastructure.Services;
+using DonationHub.Infrastructure.Seed;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Register Infrastructure Services
-builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // Controllers
 builder.Services.AddControllers();
 
-// OpenAPI
+// Infrastructure: Database, Identity, JWT, Services and Options
+builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// Built-in OpenAPI
 builder.Services.AddOpenApi();
+
 
 var app = builder.Build();
 
-// Seed Admin
 using (var scope = app.Services.CreateScope())
 {
     var seeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
-    await seeder.SeedAsync();
-}
 
-// Configure HTTP request pipeline
+    await seeder.SeedAsync(app.Services);
+}
+// OpenAPI and Scalar
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
 
+// Authentication must come before Authorization
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();

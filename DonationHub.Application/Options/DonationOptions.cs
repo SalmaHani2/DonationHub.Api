@@ -1,10 +1,13 @@
 ﻿
+using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 
 namespace DonationHub.Application.Options;
 
-public class DonationOptions : IValidatableObject
+public class DonationOptions(IOptions<DonationOptions> options) : IValidatableObject
 {
+    private readonly DonationOptions _options = options.Value;
+
     [Range(typeof(decimal), "1.00", "10000.00")]
     public decimal MinAmount { get; set; } = 1.00m;
 

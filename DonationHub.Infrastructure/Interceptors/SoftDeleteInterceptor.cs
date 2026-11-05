@@ -1,32 +1,41 @@
 ﻿
-using DonationHub.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using DonationHub.Domain.Common;
 
-namespace DonationHub.Infrastructure.Persistence.Interceptors
+namespace DonationHub.Infrastructure.Persistence.Interceptors;
+
+public class SoftDeleteInterceptor : SaveChangesInterceptor
 {
-    public sealed class SoftDeleteInterceptor : SaveChangesInterceptor
+    private static void ApplySoftDelete(DbContext? context)
     {
-        
-            public override InterceptionResult<int> SavingChanges(
-                DbContextEventData eventData, InterceptionResult<int> result)
-            {
-                if (eventData.Context is null)
-                    return result;
+        if (context is null)
+            return;
 
-                foreach (var entry in eventData.Context.ChangeTracker.Entries())
-                {
-                    // if (entry is null || entry.State != EntityState.Deleted || !(entry.Entity is ISoftDele
-                    if (entry is not { State: EntityState.Deleted, Entity: ISoftDeletable entity })
-                        continue;
+        var deletedEntries = context.ChangeTracker
+            .Entries<ISoftDeletable>()
+            .Where(e => e.State == EntityState.Deleted);
 
-                    entry.State = EntityState.Modified;
+        foreach (var entry in deletedEntries)
+        {
+            entry.State = EntityState.Modified;
 
-                    entity.Deleted();
-                }
-
-                return result;
-            }
+            entry.Entity.IsDeleted = true;
+            entry.Entity.DeletedAtUtc = DateTime.UtcNow;
         }
     }
+    //override sync
+    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
+    {
+        ApplySoftDelete(eventData.Context);
 
+        return base.SavingChanges(eventData, result);
+    }
+    //override async
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+    {
+        ApplySoftDelete(eventData.Context);
+
+        return base.SavingChangesAsync(eventData,result,cancellationToken);
+    }
+}

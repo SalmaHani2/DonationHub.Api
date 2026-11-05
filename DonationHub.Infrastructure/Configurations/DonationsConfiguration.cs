@@ -1,10 +1,9 @@
 ﻿using DonationHub.Domain.Entities;
-using DonationHub.Domain.ValueObject;
+using DonationHub.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-public class DonationConfiguration
-    : IEntityTypeConfiguration<Donation>
+public class DonationConfiguration: IEntityTypeConfiguration<Donation>
 {
     public void Configure(EntityTypeBuilder<Donation> builder)
     {

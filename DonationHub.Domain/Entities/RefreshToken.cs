@@ -1,20 +1,42 @@
 ﻿using DonationHub.Domain.Common;
-using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace DonationHub.Domain.Entities
+namespace DonationHub.Domain.Entities;
+
+public class RefreshToken : Entity
 {
-    public class RefreshToken  : Entity
-    {
-        //Id, UserId, TokenHash, CreatedAt, ExpiresAt, RevokedAt?, ReplacedByTokenId?
-        public Guid UserId { get; set; }
-        public string TokenHash { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime ExpiresAt { get; set; }
-        public DateTime? RevokedAt { get; set; }
-        public Guid? ReplacedByTokenId { get; set; }
+    public Guid UserId { get; private set; }
 
+    public string TokenHash { get; private set; } = string.Empty;
+
+    public DateTime CreatedAt { get; private set; }
+
+    public DateTime ExpiresAt { get; private set; }
+
+    public DateTime? RevokedAt { get; private set; }
+
+    public Guid? ReplacedByTokenId { get; private set; }
+
+    private RefreshToken()
+    {
+    }
+
+    public RefreshToken(
+        Guid userId,
+        string tokenHash,
+        DateTime expiresAt)
+    {
+        UserId = userId;
+        TokenHash = tokenHash;
+        CreatedAt = DateTime.UtcNow;
+        ExpiresAt = expiresAt;
+    }
+
+    public void Revoke(Guid? replacedByTokenId = null)
+    {
+        if (RevokedAt.HasValue)
+            return;
+
+        RevokedAt = DateTime.UtcNow;
+        ReplacedByTokenId = replacedByTokenId;
     }
 }

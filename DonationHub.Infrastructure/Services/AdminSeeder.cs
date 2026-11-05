@@ -1,10 +1,9 @@
-﻿
-using DonationHub.Domain.ValueObject;
+﻿using DonationHub.Infrastructure.Identity;
 using DonationHub.Infrastructure.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
-namespace DonationHub.Infrastructure.Services;
+namespace DonationHub.Infrastructure.Seed;
 
 public class AdminSeeder
 {
@@ -12,6 +11,12 @@ public class AdminSeeder
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly SeedAdminOptions _options;
 
+    private static readonly string[] Roles =
+    {
+        "Admin",
+        "CampaignManager",
+        "Donor"
+    };
 
     public AdminSeeder(UserManager<ApplicationUser> userManager,RoleManager<IdentityRole<Guid>> roleManager,IOptions<SeedAdminOptions> options)
     {
@@ -20,35 +25,70 @@ public class AdminSeeder
         _options = options.Value;
     }
 
-    public async Task SeedAsync()
+    public async Task SeedAsync(IServiceProvider services)
     {
-        //const string role = "Admin";
-
-        //if (!await _roleManager.RoleExistsAsync(role))
-        //    await _roleManager.CreateAsync(new IdentityRole<Guid>(role));
-
-        string[] roles = { "Admin", "CampaignManager", "Donor" };
-
-        foreach (var role in roles)
+        // Create roles if they do not exist.
+        foreach (var role in Roles)
         {
-            if (!await _roleManager.RoleExistsAsync(role))
-                await _roleManager.CreateAsync(new IdentityRole<Guid>(role));
+            var roleExists =
+                await _roleManager.RoleExistsAsync(role);
+
+            if (!roleExists)
+            {
+                var result = await _roleManager.CreateAsync(
+                    new IdentityRole<Guid>(role));
+
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        $"Could not create role: {role}");
+                }
+            }
         }
 
-        var admin = await _userManager.FindByEmailAsync(_options.Email);
+        // Find the initial Admin.
+        var admin = await _userManager.FindByEmailAsync(
+            _options.Email);
 
-        if (admin != null)
-            return;
+        if (admin == null)
+        {
+            admin = new ApplicationUser(
+                _options.Email,
+                _options.FullName,
+                "en",
+                DateTime.UtcNow);
 
-        admin = new ApplicationUser(
-            _options.Email,
-            _options.FullName,
-            "en",
-            DateTime.UtcNow);
+            var createResult = await _userManager.CreateAsync(
+                admin,
+                _options.Password);
 
-        var result = await _userManager.CreateAsync(admin, _options.Password);
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join(
+                    ", ",
+                    createResult.Errors.Select(error => error.Code));
 
-        if (result.Succeeded)
-            await _userManager.AddToRoleAsync(admin, "Admin");
+                throw new InvalidOperationException(
+                    $"Could not create the initial Admin: {errors}");
+            }
+        }
+
+        // Ensure the user has the Admin role.
+        var isAdmin = await _userManager.IsInRoleAsync(
+            admin,
+            "Admin");
+
+        if (!isAdmin)
+        {
+            var roleResult = await _userManager.AddToRoleAsync(
+                admin,
+                "Admin");
+
+            if (!roleResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    "Could not assign the Admin role.");
+            }
+        }
     }
 }

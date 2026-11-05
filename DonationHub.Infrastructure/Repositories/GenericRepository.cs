@@ -1,12 +1,12 @@
 ﻿
 using DonationHub.Application.Interfaces;
+using DonationHub.Domain.Common;
 using DonationHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace DonationHub.Infrastructure.Repositories;
 
-public class GenericRepository<T> : IGenericRepository<T>
-    where T : class //BaseEntity   //class
+public class GenericRepository<T> : IGenericRepository<T> where T : Entity
 {
     private readonly AppDbContext _context;
 
