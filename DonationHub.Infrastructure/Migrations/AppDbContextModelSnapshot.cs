@@ -34,6 +34,9 @@ namespace DonationHub.Infrastructure.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CategoryId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -89,6 +92,8 @@ namespace DonationHub.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("CategoryId1");
+
                     b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Campaigns");
@@ -116,15 +121,25 @@ namespace DonationHub.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("NameAr")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("NameEn")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("NameAr")
+                        .IsUnique();
+
+                    b.HasIndex("NameEn")
+                        .IsUnique();
 
                     b.ToTable("Categories");
                 });
@@ -527,10 +542,16 @@ namespace DonationHub.Infrastructure.Migrations
 
             modelBuilder.Entity("DonationHub.Domain.Entities.Campaign", b =>
                 {
-                    b.HasOne("DonationHub.Domain.Entities.Category", "Category")
+                    b.HasOne("DonationHub.Domain.Entities.Category", null)
                         .WithMany("Campaigns")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DonationHub.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId1")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Category");
