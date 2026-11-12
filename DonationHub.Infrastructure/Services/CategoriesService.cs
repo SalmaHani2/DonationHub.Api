@@ -1,5 +1,6 @@
-﻿using DonationHub.Application.DTOs.Categories;
-using DonationHub.Application.Interfaces;
+﻿
+using DonationHub.Application.Categories.Categories;
+using DonationHub.Application.Categories.Interfaces;
 using DonationHub.Domain.Entities;
 using DonationHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -15,23 +16,24 @@ public class CategoryService : ICategoryService
         _context = context;
     }
 
-    public async Task<List<CategoryResponse>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<List<CategoryResponse>> GetAllAsync(
+        CancellationToken cancellationToken)
     {
-        var categories = await _context.Categories
+        return await _context.Categories
             .Select(category => new CategoryResponse
             {
                 Id = category.Id,
-                NameAr = category.NameAr,
-                NameEn = category.NameEn,
+                NameAr = category.NameAr!,
+                NameEn = category.NameEn!,
                 DescriptionAr = category.DescriptionAr,
                 DescriptionEn = category.DescriptionEn
             })
             .ToListAsync(cancellationToken);
-
-        return categories;
     }
 
-    public async Task<CategoryResponse> GetByIdAsync(Guid id,CancellationToken cancellationToken)
+    public async Task<CategoryResponse> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken)
     {
         var category = await _context.Categories
             .FirstOrDefaultAsync(
@@ -39,47 +41,35 @@ public class CategoryService : ICategoryService
                 cancellationToken);
 
         if (category == null)
-        {
             throw new KeyNotFoundException("Category.NotFound");
-        }
 
-        return new CategoryResponse
-        {
-            Id = category.Id,
-            NameAr = category.NameAr,
-            NameEn = category.NameEn,
-            DescriptionAr = category.DescriptionAr,
-            DescriptionEn = category.DescriptionEn
-        };
+        return MapToResponse(category);
     }
 
-    public async Task<CategoryResponse> CreateAsync(CreateCategoryRequest request, CancellationToken cancellationToken)
+    public async Task<CategoryResponse> CreateAsync(
+        CreateCategoryRequest request,
+        CancellationToken cancellationToken)
     {
-        var category = new Category
-        {
-            NameAr = request.NameAr,
-            NameEn = request.NameEn,
-            DescriptionAr = request.DescriptionAr,
-            DescriptionEn = request.DescriptionEn,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        var currentTime = DateTime.UtcNow;
+
+        var category = Category.Create(
+            request.NameAr.Trim(),
+            request.NameEn.Trim(),
+            request.DescriptionAr?.Trim(),
+            request.DescriptionEn?.Trim(),
+            currentTime);
 
         _context.Categories.Add(category);
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new CategoryResponse
-        {
-            Id = category.Id,
-            NameAr = category.NameAr,
-            NameEn = category.NameEn,
-            DescriptionAr = category.DescriptionAr,
-            DescriptionEn = category.DescriptionEn
-        };
+        return MapToResponse(category);
     }
 
-    public async Task<CategoryResponse> UpdateAsync(Guid id,UpdateCategoryRequest request,CancellationToken cancellationToken)
+    public async Task<CategoryResponse> UpdateAsync(
+        Guid id,
+        UpdateCategoryRequest request,
+        CancellationToken cancellationToken)
     {
         var category = await _context.Categories
             .FirstOrDefaultAsync(
@@ -87,29 +77,23 @@ public class CategoryService : ICategoryService
                 cancellationToken);
 
         if (category == null)
-        {
             throw new KeyNotFoundException("Category.NotFound");
-        }
 
-        category.NameAr = request.NameAr;
-        category.NameEn = request.NameEn;
-        category.DescriptionAr = request.DescriptionAr;
-        category.DescriptionEn = request.DescriptionEn;
-        category.UpdatedAt = DateTime.UtcNow;
+        category.Update(
+            request.NameAr.Trim(),
+            request.NameEn.Trim(),
+            request.DescriptionAr?.Trim(),
+            request.DescriptionEn?.Trim(),
+            DateTime.UtcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new CategoryResponse
-        {
-            Id = category.Id,
-            NameAr = category.NameAr,
-            NameEn = category.NameEn,
-            DescriptionAr = category.DescriptionAr,
-            DescriptionEn = category.DescriptionEn
-        };
+        return MapToResponse(category);
     }
 
-    public async Task DeleteAsync(Guid id,CancellationToken cancellationToken)
+    public async Task DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken)
     {
         var category = await _context.Categories
             .Include(category => category.Campaigns)
@@ -118,18 +102,24 @@ public class CategoryService : ICategoryService
                 cancellationToken);
 
         if (category == null)
-        {
             throw new KeyNotFoundException("Category.NotFound");
-        }
 
-        if (category.Campaigns.Any())
-        {
-            throw new InvalidOperationException(
-                "Category.HasCampaigns");
-        }
+        category.EnsureCanBeDeleted();
 
-        _context.Categories.Remove(category);
+        category.Deleted(DateTime.UtcNow);
 
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    private static CategoryResponse MapToResponse(Category category)
+    {
+        return new CategoryResponse
+        {
+            Id = category.Id,
+            NameAr = category.NameAr!,
+            NameEn = category.NameEn!,
+            DescriptionAr = category.DescriptionAr,
+            DescriptionEn = category.DescriptionEn
+        };
     }
 }

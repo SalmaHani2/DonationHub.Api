@@ -1,5 +1,5 @@
-﻿using DonationHub.Application.DTOs.Admin;
-using DonationHub.Application.Interfaces;
+﻿using DonationHub.Application.Admin.Admin;
+using DonationHub.Application.Admin.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

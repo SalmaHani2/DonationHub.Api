@@ -1,5 +1,5 @@
 ﻿
-using DonationHub.Application.Interfaces;
+using DonationHub.Application.Common;
 using DonationHub.Domain.Common;
 using DonationHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -26,10 +26,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : Entity
         return Task.CompletedTask;
     }
 
-    public async Task RemoveAsync(T entity,CancellationToken cancellationToken)
+    public Task RemoveAsync(T entity, CancellationToken cancellationToken)
     {
         _context.Set<T>().Remove(entity);
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

@@ -1,4 +1,5 @@
-﻿using DonationHub.Domain.Entities;
+﻿
+using DonationHub.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -24,9 +25,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.HasIndex(x => x.NameEn)
             .IsUnique();
 
-        builder.HasMany(x => x.Campaigns)
-            .WithOne()
-            .HasForeignKey(x => x.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasQueryFilter(x => !x.IsDeleted);
+        
     }
 }

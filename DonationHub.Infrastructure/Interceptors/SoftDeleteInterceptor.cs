@@ -1,13 +1,20 @@
 ﻿
+using DonationHub.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using DonationHub.Domain.Common;
 
 namespace DonationHub.Infrastructure.Persistence.Interceptors;
 
 public class SoftDeleteInterceptor : SaveChangesInterceptor
 {
-    private static void ApplySoftDelete(DbContext? context)
+    private readonly TimeProvider _timeProvider;
+
+    public SoftDeleteInterceptor(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
+    private void ApplySoftDelete(DbContext? context)
     {
         if (context is null)
             return;
@@ -20,22 +27,28 @@ public class SoftDeleteInterceptor : SaveChangesInterceptor
         {
             entry.State = EntityState.Modified;
 
-            entry.Entity.IsDeleted = true;
-            entry.Entity.DeletedAtUtc = DateTime.UtcNow;
+            entry.Entity.Deleted(_timeProvider.GetUtcNow().UtcDateTime);
         }
     }
-    //override sync
-    public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
+
+    // Override sync
+    public override InterceptionResult<int> SavingChanges(
+        DbContextEventData eventData,
+        InterceptionResult<int> result)
     {
         ApplySoftDelete(eventData.Context);
 
         return base.SavingChanges(eventData, result);
     }
-    //override async
-    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+
+    // Override async
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
     {
         ApplySoftDelete(eventData.Context);
 
-        return base.SavingChangesAsync(eventData,result,cancellationToken);
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 }

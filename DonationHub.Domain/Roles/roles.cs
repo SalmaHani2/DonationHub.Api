@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DonationHub.Domain.Roles
 {
-    public class roles
+    public class Roles
     {
         //Roles: Admin, CampaignManager, Donor.
         public const string Admin = "Admin";

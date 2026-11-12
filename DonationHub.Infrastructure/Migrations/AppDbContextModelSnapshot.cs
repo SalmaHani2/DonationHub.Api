@@ -34,9 +34,6 @@ namespace DonationHub.Infrastructure.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CategoryId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -57,16 +54,8 @@ namespace DonationHub.Infrastructure.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal>("GoalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<decimal>("RaisedAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -91,8 +80,6 @@ namespace DonationHub.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("CategoryId1");
 
                     b.HasIndex("CreatedByUserId");
 
@@ -149,10 +136,6 @@ namespace DonationHub.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("CampaignId")
                         .HasColumnType("uniqueidentifier");
@@ -228,9 +211,6 @@ namespace DonationHub.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -240,9 +220,8 @@ namespace DonationHub.Infrastructure.Migrations
                     b.Property<string>("FailureCode")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("StripeCheckoutSessionId")
                         .IsRequired()
@@ -542,19 +521,67 @@ namespace DonationHub.Infrastructure.Migrations
 
             modelBuilder.Entity("DonationHub.Domain.Entities.Campaign", b =>
                 {
-                    b.HasOne("DonationHub.Domain.Entities.Category", null)
+                    b.HasOne("DonationHub.Domain.Entities.Category", "Category")
                         .WithMany("Campaigns")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DonationHub.Domain.Entities.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.OwnsOne("Money", "GoalAmount", b1 =>
+                        {
+                            b1.Property<Guid>("CampaignId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("GoalAmount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("nvarchar(3)")
+                                .HasColumnName("GoalAmountCurrency");
+
+                            b1.HasKey("CampaignId");
+
+                            b1.ToTable("Campaigns");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CampaignId");
+                        });
+
+                    b.OwnsOne("Money", "RaisedAmount", b1 =>
+                        {
+                            b1.Property<Guid>("CampaignId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("RaisedAmount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("nvarchar(3)")
+                                .HasColumnName("RaisedAmountCurrency");
+
+                            b1.HasKey("CampaignId");
+
+                            b1.ToTable("Campaigns");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CampaignId");
+                        });
 
                     b.Navigation("Category");
+
+                    b.Navigation("GoalAmount")
+                        .IsRequired();
+
+                    b.Navigation("RaisedAmount")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DonationHub.Domain.Entities.Donation", b =>
@@ -571,7 +598,64 @@ namespace DonationHub.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.OwnsOne("Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("DonationId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("nvarchar(3)")
+                                .HasColumnName("AmountCurrency");
+
+                            b1.HasKey("DonationId");
+
+                            b1.ToTable("Donations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("DonationId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
+
                     b.Navigation("Campaign");
+                });
+
+            modelBuilder.Entity("DonationHub.Domain.Entities.PaymentAttempt", b =>
+                {
+                    b.OwnsOne("Money", "Amount", b1 =>
+                        {
+                            b1.Property<Guid>("PaymentAttemptId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<decimal>("Amount")
+                                .HasPrecision(18, 2)
+                                .HasColumnType("decimal(18,2)")
+                                .HasColumnName("Amount");
+
+                            b1.Property<string>("Currency")
+                                .IsRequired()
+                                .HasMaxLength(3)
+                                .HasColumnType("nvarchar(3)")
+                                .HasColumnName("AmountCurrency");
+
+                            b1.HasKey("PaymentAttemptId");
+
+                            b1.ToTable("PaymentAttempts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PaymentAttemptId");
+                        });
+
+                    b.Navigation("Amount")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("DonationHub.Domain.Entities.RefreshToken", b =>

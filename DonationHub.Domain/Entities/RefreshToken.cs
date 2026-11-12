@@ -30,13 +30,10 @@ public class RefreshToken : Entity
         CreatedAt = DateTime.UtcNow;
         ExpiresAt = expiresAt;
     }
-
-    public void Revoke(Guid? replacedByTokenId = null)
+    public void Revoke(Guid? replacedByTokenId, DateTime currentTime)
     {
-        if (RevokedAt.HasValue)
-            return;
-
-        RevokedAt = DateTime.UtcNow;
+        RevokedAt = currentTime;
         ReplacedByTokenId = replacedByTokenId;
     }
+    
 }

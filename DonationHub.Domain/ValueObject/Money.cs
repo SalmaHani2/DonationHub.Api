@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DonationHub.Domain.Common;
+﻿using DonationHub.Domain.Common;
 
 public sealed class Money : ValueObject
 {
-    public decimal Amount { get; }
-    public string Currency { get; }
+    public decimal Amount { get; private set; }
+    public string Currency { get; private set; } = null!;
+
+    private Money()
+    {
+    }
 
     private Money(decimal amount, string currency)
     {
@@ -18,14 +18,10 @@ public sealed class Money : ValueObject
     public static Money Create(decimal amount, string currency)
     {
         if (amount < 0)
-            throw new ArgumentOutOfRangeException(
-                nameof(amount),
-                "Amount cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(amount), "Amount cannot be negative.");
 
         if (string.IsNullOrWhiteSpace(currency))
-            throw new ArgumentException(
-                "Currency is required.",
-                nameof(currency));
+            throw new ArgumentException("Currency is required.", nameof(currency));
 
         return new Money(amount, currency.Trim().ToUpperInvariant());
     }

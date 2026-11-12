@@ -1,3 +1,4 @@
+using DonationHub.Application.DependencyInjection;
 using DonationHub.Infrastructure;
 using DonationHub.Infrastructure.Seed;
 using Scalar.AspNetCore;
@@ -9,6 +10,7 @@ builder.Services.AddControllers();
 
 // Infrastructure: Database, Identity, JWT, Services and Options
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationServices(builder.Configuration);
 
 // Built-in OpenAPI
 builder.Services.AddOpenApi();
@@ -31,7 +33,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Authentication must come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

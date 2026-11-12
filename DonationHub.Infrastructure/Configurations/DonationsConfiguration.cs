@@ -21,7 +21,17 @@ public class DonationConfiguration: IEntityTypeConfiguration<Donation>
 
         builder.HasIndex(d => d.DonorUserId);
 
-        builder.Property(d => d.Amount)
-            .HasPrecision(18, 2);
+       
+        builder.OwnsOne(d => d.Amount, money =>
+        {
+            money.Property(m => m.Amount)
+                .HasColumnName("Amount")
+                .HasPrecision(18, 2);
+
+            money.Property(m => m.Currency)
+                .HasColumnName("AmountCurrency")
+                .HasMaxLength(3)
+                .IsRequired();
+        });
     }
 }

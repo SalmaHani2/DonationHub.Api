@@ -1,9 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using DonationHub.Application.Interfaces;
-using DonationHub.Infrastructure.Options;
+using DonationHub.Application.Auth.Options;
+using DonationHub.Application.Tokens;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -18,13 +19,26 @@ public class TokenService : ITokenService
         _options = options.Value;
     }
 
-    public string GenerateAccessToken(Guid userId,string email,IList<string> roles)
+    public string GenerateAccessToken(
+        Guid userId,
+        string email,
+        IList<string> roles)
     {
         var claims = new List<Claim>
         {
             new Claim("UserId", userId.ToString()),
-            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-            new Claim(ClaimTypes.Email, email)
+
+            new Claim(
+                ClaimTypes.NameIdentifier,
+                userId.ToString()),
+
+            new Claim(
+                ClaimTypes.Email,
+                email),
+
+            new Claim(
+                JwtRegisteredClaimNames.Jti,
+                Guid.NewGuid().ToString())
         };
 
         foreach (var role in roles)

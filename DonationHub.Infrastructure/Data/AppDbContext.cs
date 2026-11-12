@@ -33,15 +33,5 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
         base.OnModelCreating(builder);
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-
-        builder.Entity<RefreshToken>()
-            .HasOne<ApplicationUser>()
-            .WithMany()
-            .HasForeignKey(token => token.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Entity<RefreshToken>()
-            .HasIndex(token => token.TokenHash)
-            .IsUnique();
     }
 }
