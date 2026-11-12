@@ -20,6 +20,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using DonationHub.Application.Categories.Interfaces;
 
 namespace DonationHub.Infrastructure;
 
@@ -125,7 +126,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IAdminService, AdminService>();
-        // services.AddScoped<ICategoriesService, CategoriesService>();
+         services.AddScoped<ICategoryService, CategoryService>();
 
         services.AddScoped<AdminSeeder>();
 
