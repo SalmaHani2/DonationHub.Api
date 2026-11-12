@@ -1,179 +1,313 @@
-# DonationHub
 
-DonationHub is a donation management API built with **ASP.NET Core .NET 10**, following Clean Architecture principles.
+# DonationHub API
 
-## Prerequisites
+DonationHub is a donation management system built with ASP.NET Core Web API and .NET 10. It allows users to browse donation campaigns, make donations, and manage campaigns based on their assigned roles.
 
-Before running the project, make sure you have:
+## 1. Prerequisites
+
+Make sure you have the following installed:
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- SQL Server (LocalDB, SQL Server Express, or a full SQL Server instance)
-- An IDE or editor such as Visual Studio or Visual Studio Code
-- Entity Framework Core CLI tools
+- SQL Server (SQL Server Express, Developer Edition, or LocalDB)
+- Visual Studio 2022 or Visual Studio Code
+- Entity Framework Core CLI
 
-Install the EF Core CLI tool if you haven't already:
+Install the EF Core CLI tool if it is not already installed:
 
 ```bash
 dotnet tool install --global dotnet-ef
 ```
 
-If it is already installed, update it:
+Or update it:
 
 ```bash
 dotnet tool update --global dotnet-ef
 ```
 
-## Getting Started
-
-### 1. Clone the repository
+Verify your installation:
 
 ```bash
-git clone <repository-url>
-cd DonationHub
+dotnet --version
+dotnet ef --version
 ```
 
-### 2. Configure User Secrets
+## 2. Project Structure
 
-The project uses ASP.NET Core User Secrets to store sensitive development settings.
-
-Navigate to the API project directory or specify its project file when running the commands.
-
-Initialize User Secrets:
-
-```bash
-dotnet user-secrets init --project <path-to-api-csproj>
-```
-
-Set the database connection string:
-
-```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "<your-sql-server-connection-string>" --project <path-to-api-csproj>
-```
-
-Set the JWT configuration:
-
-```bash
-dotnet user-secrets set "Jwt:SecretKey" "<your-secret-key>" --project <path-to-api-csproj>
-```
-
-Set the seeded Admin credentials:
-
-```bash
-dotnet user-secrets set "SeedAdmin:Email" "<admin-email>" --project <path-to-api-csproj>
-dotnet user-secrets set "SeedAdmin:Password" "<admin-password>" --project <path-to-api-csproj>
-```
-
-Set development test-user credentials if the development seeder supports them:
-
-```bash
-dotnet user-secrets set "DevTestUser:Email" "<test-user-email>" --project <path-to-api-csproj>
-dotnet user-secrets set "DevTestUser:Password" "<test-user-password>" --project <path-to-api-csproj>
-```
-
-> **Important:** Never commit real passwords, JWT secret keys, or database credentials to source control. The configuration keys above must match the sections and property names used by the project's Options classes and seeders.
-
-### 3. Apply Database Migrations
-
-From the repository root, run:
-
-```bash
-dotnet ef database update --project <path-to-infrastructure-csproj> --startup-project <path-to-api-csproj> --context AppDbContext
-```
-
-This applies the existing EF Core migrations and creates or updates the database schema.
-
-If the project does not have an initial migration yet, create one first:
-
-```bash
-dotnet ef migrations add InitialCreate --project <path-to-infrastructure-csproj> --startup-project <path-to-api-csproj> --context AppDbContext
-```
-
-### 4. Run the API
-
-```bash
-dotnet run --project <path-to-api-csproj>
-```
-
-Check the terminal output for the application URL.
-
-## API Documentation
-
-When running in the Development environment, the API documentation can be accessed through **Scalar**:
+The solution follows Clean Architecture with clear separation of responsibilities.
 
 ```text
-http://localhost:<port>/scalar
+DonationHub/
+│
+├── DonationHub.Domain/
+│   ├── Entities/
+│   ├── Enums/
+│   └── ValueObjects/
+│
+├── DonationHub.Application/
+│   ├── Interfaces/
+│   ├── Services/
+│   └── Options/
+│
+├── DonationHub.Infrastructure/
+│   ├── Persistence/
+│   ├── Repositories/
+│   ├── Identity/
+│   └── Services/
+│
+├── DonationHub.ApiDonationHub.Api/
+│   ├── Controllers/
+│   ├── Extensions/
+│   ├── Program.cs
+│   └── appsettings.json
+│
+└── DonationHub.sln
 ```
 
-The OpenAPI document is available at:
+## 3. Configuration
+
+The application uses .NET User Secrets to store sensitive development configuration.
+
+Never commit real passwords, JWT secrets, or other credentials to source control.
+
+### 3.1 Configure User Secrets
+
+Navigate to the API project directory (the directory containing the API `.csproj` file):
+
+```bash
+cd DonationHub.ApiDonationHub.Api
+```
+
+Initialize User Secrets if they have not already been initialized:
+
+```bash
+dotnet user-secrets init
+```
+
+### 3.2 Database Connection String
+
+Configure your SQL Server connection string:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=YOUR_SERVER;Database=DonationHubDb;Trusted_Connection=True;TrustServerCertificate=True;"
+```
+
+Replace `YOUR_SERVER` with your SQL Server instance.
+
+For example, for LocalDB:
 
 ```text
-http://localhost:<port>/openapi/v1.json
+Server=(localdb)\MSSQLLocalDB;Database=DonationHubDb;Trusted_Connection=True;TrustServerCertificate=True;
 ```
 
-Replace `<port>` with the port shown in the application startup output.
+### 3.3 Seeded Admin Credentials
 
-If Swagger UI is configured separately, use its configured URL. Otherwise, Scalar is the interactive API documentation interface.
+Configure the credentials used by the database seeder to create the initial Admin account:
 
-## Testing Protected Endpoints
-
-Some endpoints require authentication.
-
-1. Open Scalar and locate `POST /auth/login`.
-2. Log in using a valid user account.
-3. Copy the returned JWT Access Token.
-4. For protected endpoints, provide the token using the Bearer authentication scheme:
-
-```text
-Authorization: Bearer <your-access-token>
+```bash
+dotnet user-secrets set "SeedAdmin:Email" "YOUR_ADMIN_EMAIL"
+dotnet user-secrets set "SeedAdmin:Password" "YOUR_STRONG_ADMIN_PASSWORD"
 ```
 
-5. Execute the protected endpoint and inspect its response.
+Use your own development credentials. Never commit actual credentials.
 
-For endpoints requiring specific roles, make sure the logged-in user has the required role.
+### 3.4 Development Test User Credentials
 
-**Authentication endpoints to test:**
+If the application requires a development test user, configure its credentials using the corresponding configuration keys:
 
-- `POST /auth/register` — Register a new donor.
-- `POST /auth/login` — Authenticate and receive tokens.
-- `POST /auth/refresh` — Refresh the access token using the refresh token.
-- `POST /auth/logout` — Revoke the provided refresh token.
-- `GET /auth/me` — Retrieve the authenticated user's information, if implemented.
+```bash
+dotnet user-secrets set "TestUser:Email" "YOUR_TEST_USER_EMAIL"
+dotnet user-secrets set "TestUser:Password" "YOUR_TEST_USER_PASSWORD"
+```
 
-## Design Decisions
+Make sure these keys match the configuration section used by your development seeder.
 
-### Clean Architecture
+### 3.5 JWT Configuration
 
-The solution separates responsibilities into layers:
+Configure JWT settings:
 
-- **Domain:** Contains core entities, value objects, and business rules.
-- **Application:** Contains application interfaces, contracts, and use cases.
-- **Infrastructure:** Contains persistence, EF Core configurations, and external service implementations.
-- **API:** Exposes HTTP endpoints and handles incoming requests.
+```bash
+dotnet user-secrets set "Jwt:SecretKey" "YOUR_SECRET_KEY_AT_LEAST_32_BYTES"
+dotnet user-secrets set "Jwt:Issuer" "DonationHub"
+dotnet user-secrets set "Jwt:Audience" "DonationHub"
+```
 
-This separation keeps business logic independent of infrastructure and presentation concerns.
+The JWT secret key must contain at least 32 bytes.
 
-### Generic Repository and Unit of Work for Writes
+### 3.6 Verify User Secrets
 
-Following **SRS §3.3, Rule 5**, write operations go through the Generic Repository and Unit of Work abstractions.
+List the configured keys:
 
-- The Generic Repository provides a common way to add, update, and remove entities.
-- The Unit of Work coordinates persistence and commits changes through `SaveChangesAsync`.
-- This keeps write operations consistent and separates application-level operations from EF Core persistence details.
+```bash
+dotnet user-secrets list
+```
 
-### Direct DbContext Queries for Reads
+User Secrets are stored outside the project directory and should never be committed to Git.
 
-Read operations use `DbContext` directly with:
+## 4. Database Setup
 
-- `AsNoTracking()` to avoid unnecessary change tracking for read-only queries.
+The project uses Entity Framework Core Code-First migrations.
+
+Make sure SQL Server is running and the connection string is correctly configured before applying migrations.
+
+### 4.1 Apply Migrations
+
+From the solution directory, run:
+
+```bash
+dotnet ef database update --project DonationHub.Infrastructure --startup-project DonationHub.ApiDonationHub.Api
+```
+
+This command:
+
+- Uses the Infrastructure project to locate the migrations and DbContext.
+- Uses the API project to load application configuration and dependency injection.
+- Creates the database if it does not exist.
+- Applies all pending migrations.
+
+### 4.2 Create a New Migration
+
+When database models or configurations change, create a migration:
+
+```bash
+dotnet ef migrations add MigrationName --project DonationHub.Infrastructure --startup-project DonationHub.ApiDonationHub.Api
+```
+
+Then apply it:
+
+```bash
+dotnet ef database update --project DonationHub.Infrastructure --startup-project DonationHub.ApiDonationHub.Api
+```
+
+## 5. Running the Application
+
+From the API project directory:
+
+```bash
+dotnet run
+```
+
+Or run the API using Visual Studio.
+
+The application will start on the configured HTTP/HTTPS URLs.
+
+Check the console output to identify the actual listening address.
+
+## 6. API Documentation
+
+DonationHub uses OpenAPI for API documentation and Scalar as its interactive API documentation interface.
+
+After starting the application, access:
+
+- **Scalar UI:** `http://localhost:5000/scalar`
+- **OpenAPI JSON:** `http://localhost:5000/openapi/v1.json`
+
+The actual URLs depend on the configured application ports.
+
+### Testing Protected Endpoints
+
+Some endpoints require authentication and specific roles.
+
+To test protected endpoints:
+
+1. Open Scalar.
+2. Execute the login endpoint using valid credentials.
+3. Copy the returned JWT access token.
+4. Click the authentication/Authorize option in Scalar.
+5. Select Bearer authentication and enter your access token.
+6. Execute the protected endpoint.
+
+Make sure the authenticated user has the required role.
+
+For example:
+
+- Admin-only endpoints require the `Admin` role.
+- Staff management endpoints may require `Admin` or `CampaignManager`.
+- Anonymous endpoints can be accessed without authentication.
+
+## 7. Design Decisions
+
+### 7.1 Clean Architecture
+
+The application follows Clean Architecture to separate business rules from infrastructure and presentation concerns.
+
+The main layers are:
+
+- **Domain:** Contains entities, enums, and value objects representing the core business concepts.
+- **Application:** Contains application interfaces, service contracts, and use-case logic.
+- **Infrastructure:** Implements persistence, repositories, Identity, and external infrastructure concerns.
+- **API:** Exposes HTTP endpoints through controllers and handles request/response communication.
+
+Dependencies point inward, keeping the Domain independent of infrastructure details.
+
+### 7.2 Generic Repository + Unit of Work for Writes
+
+Write operations go through the Generic Repository and Unit of Work abstractions.
+
+This provides:
+
+- A centralized approach to data modification.
+- Separation between application logic and EF Core persistence details.
+- A consistent way to commit changes.
+- Better control over transaction boundaries and persistence operations.
+
+The Unit of Work coordinates changes and commits them through a single `SaveChangesAsync` operation.
+
+### 7.3 Direct DbContext Access for Reads
+
+Read operations use the EF Core `DbContext` directly with:
+
+- `AsNoTracking()` to avoid unnecessary change tracking.
 - DTO projection using `Select()` to retrieve only the required fields.
 
-This avoids loading and tracking complete entities when the application only needs to return response data.
+This follows **SRS §3.3, Rule 5**, which specifies separating read and write access patterns.
 
-It also supports efficient read queries and avoids unnecessary repository abstractions for simple query operations.
+Benefits include:
 
-## Security Notes
+- Reduced memory overhead.
+- Better query performance.
+- Fetching only the required data.
+- Avoiding unnecessary entity tracking for read-only operations.
 
-- Never store plaintext passwords. ASP.NET Core Identity handles password hashing.
-- Store hashed refresh tokens in the database rather than their original values.
-- Keep JWT signing keys and other sensitive configuration in User Secrets during development.
-- Do not commit real credentials or secrets to the repository.
+This approach keeps write operations structured through Repository + Unit of Work while allowing optimized read queries.
+
+### 7.4 Authentication and Authorization
+
+The application uses ASP.NET Core Identity for user management and JWT Bearer authentication for securing API endpoints.
+
+Role-based authorization controls access to protected functionality.
+
+### 7.5 Soft Delete
+
+Entities that support soft deletion are marked as deleted instead of being physically removed from the database.
+
+Global query filters exclude soft-deleted records from normal queries.
+
+### 7.6 API Error Handling
+
+The API uses standardized error responses through ProblemDetails to provide consistent and meaningful HTTP error information.
+
+---
+
+## 8. Security Notes
+
+- Never commit real credentials or JWT secrets.
+- Use User Secrets for local development.
+- Use environment variables or a secure secret manager in production.
+- Do not expose sensitive configuration values in logs or API responses.
+- Use HTTPS in production.
+- Keep authentication and authorization enabled for protected endpoints.
+
+## 9. Technologies Used
+
+- C#
+- .NET 10
+- ASP.NET Core Web API
+- Entity Framework Core
+- SQL Server
+- ASP.NET Core Identity
+- JWT Bearer Authentication
+- Scalar
+- OpenAPI
+- Clean Architecture
+- Generic Repository
+- Unit of Work
